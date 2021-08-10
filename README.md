@@ -4,22 +4,20 @@
 
 库中所有函数都和对应的内置函数大致同名。但是首字母大写，且所有参数为模板参数。由于每个函数实际上仅仅只有一条位运算赋值语句（条件判断分支在编译期就优化掉了），完全可以对每次调用直接内联，牺牲少许存储空间换取更高性能。
 
+pinMode函数无法优化，因为其寄存器地址会在运行时发生变化，不是常量，必须每次临时计算。请仍使用内置pinMode。
+
 More efficient digital IO than builtin functions.
 
 Builtin functions (digitalRead & digitalWrite) translate pin code into memory address for each call, and will check PWM settings on the Pin. This is more robust but less efficient. My library calculate corresponding memory address only at the first call, store that address for following calls, and don't bother on PWM stuff. Each call is thus simplified into a single bit operation.
 
 All functions have almost the same name as their builtin counterparts. However, the first letter is is capped, and all arguments are template arguments.
 
+The pinMode function cannot be optimized because its register address will change during runtime; i.e., it is not a constant and must be calculated every time. Please still use the built-in pinMode.
+
 # API参考
 ```C++
 #include <LowLevelQuickDigitalIO>
 using namespace LowLevelQuickDigitalIO;
-/*
-内置pinMode函数的高性能替代
-Efficient substitute of builtin pinMode
-*/
-template <uint8_t PinCode, uint8_t Mode>
-void PinMode();
 /*
 内置digitalRead函数的高性能替代
 Efficient substitute of builtin digitalRead

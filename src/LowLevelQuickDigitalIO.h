@@ -4,10 +4,6 @@ namespace LowLevelQuickDigitalIO
 	//用于初始化引脚参数的内部功能，一般不应直接调用
 	namespace Internal
 	{
-		volatile uint8_t *GetModeRegister(uint8_t PinCode)
-		{
-			return portModeRegister(digitalPinToPort(PinCode));
-		}
 		volatile uint8_t *GetInputRegister(uint8_t PinCode)
 		{
 			return portInputRegister(digitalPinToPort(PinCode));
@@ -22,8 +18,6 @@ namespace LowLevelQuickDigitalIO
 		}
 		//仅第一次调用时需要计算端口和掩码，后续直接使用，实现加速
 		template <uint8_t PinCode>
-		volatile uint8_t *const ModeRegister = GetModeRegister(PinCode);
-		template <uint8_t PinCode>
 		volatile uint8_t *const InputRegister = GetInputRegister(PinCode);
 		template <uint8_t PinCode>
 		volatile uint8_t *const OutputRegister = GetOutputRegister(PinCode);
@@ -31,24 +25,6 @@ namespace LowLevelQuickDigitalIO
 		const uint8_t BitMask = GetMask(PinCode);
 	}
 	using namespace Internal;
-	//IO模式。对于INPUT_PULLUP，实际上等价于INPUT+HIGH
-	template <uint8_t PinCode, uint8_t Mode>
-	void PinMode()
-	{
-		switch (Mode)
-		{
-		case INPUT:
-			uint8_t oldSREG = SREG;
-			*ModeRegister<PinCode> &= ~BitMask<PinCode>;
-			SREG = oldSREG;
-			break;
-		case OUTPUT:
-			uint8_t oldSREG = SREG;
-			*ModeRegister<PinCode> |= BitMask<PinCode>;
-			SREG = oldSREG;
-			break;
-		}
-	}
 	//引脚读取
 	template <uint8_t PinCode>
 	bool DigitalRead()
