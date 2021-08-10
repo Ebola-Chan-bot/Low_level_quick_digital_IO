@@ -38,9 +38,15 @@ namespace LowLevelQuickDigitalIO
 		switch (Mode)
 		{
 		case INPUT:
+			uint8_t oldSREG = SREG;
 			*ModeRegister<PinCode> &= ~BitMask<PinCode>;
+			SREG = oldSREG;
+			break;
 		case OUTPUT:
+			uint8_t oldSREG = SREG;
 			*ModeRegister<PinCode> |= BitMask<PinCode>;
+			SREG = oldSREG;
+			break;
 		}
 	}
 	//引脚读取
