@@ -4,77 +4,73 @@ namespace Low_level_quick_digital_IO
 {
 #ifdef ARDUINO_ARCH_AVR
 #if __cplusplus < 201703L
-#error 对于AVR架构，编译器必须支持C++17以上
+#error 对AVR架构，必须使用C++17以上的标准编译
 #endif
 	// 用于初始化引脚参数的内部功能，一般不应直接调用
 	namespace Internal
 	{
-		static inline volatile uint8_t *GetOutputRegister(uint8_t PinCode)
+		static volatile uint8_t *GetOutputRegister(uint8_t Pin)
 		{
-			return portOutputRegister(digitalPinToPort(PinCode));
+			return portOutputRegister(digitalPinToPort(Pin));
 		}
-		static inline uint8_t GetMask(uint8_t PinCode)
+		static uint8_t GetBitMask(uint8_t Pin)
 		{
-			return digitalPinToBitMask(PinCode);
+			return digitalPinToBitMask(Pin);
 		}
-		// 仅第一次调用时需要计算端口和掩码，后续直接使用，实现加速
-		template <uint8_t PinCode>
-		static volatile uint8_t *const OutputRegister = GetOutputRegister(PinCode);
-		template <uint8_t PinCode>
-		static const uint8_t BitMask = GetMask(PinCode);
+		template <uint8_t Pin>
+		static volatile uint8_t *const OutputRegister = GetOutputRegister(Pin);
+		template <uint8_t Pin>
+		static const uint8_t BitMask = GetBitMask(Pin);
 	}
 	// 引脚读取
-	template <uint8_t PinCode>
+	template <uint8_t Pin>
 	inline bool DigitalRead()
 	{
-		static volatile uint8_t *const InputRegister = portInputRegister(digitalPinToPort(PinCode));
-		return *InputRegister<PinCode> & Internal::BitMask<PinCode>;
+		static volatile uint8_t *const InputRegister = portInputRegister(digitalPinToPort(Pin));
+		return *InputRegister<Pin> & Internal::BitMask<Pin>;
 	}
 	// 引脚写入
-	template <uint8_t PinCode, bool HighOrLow>
+	template <uint8_t Pin, bool HighOrLow>
 	inline void DigitalWrite()
 	{
 		// 对模板参数进行判断在编译期进行，自动剪除未运行的支路，运行时无需重复判断
 		if (HighOrLow)
-			*Internal::OutputRegister<PinCode> |= Internal::BitMask<PinCode>;
+			*Internal::OutputRegister<Pin> |= Internal::BitMask<Pin>;
 		else
-			*Internal::OutputRegister<PinCode> &= ~Internal::BitMask<PinCode>;
+			*Internal::OutputRegister<Pin> &= ~Internal::BitMask<Pin>;
 	}
 	// 引脚反转
-	template <uint8_t PinCode>
+	template <uint8_t Pin>
 	inline void DigitalToggle()
 	{
-		*Internal::OutputRegister<PinCode> ^= Internal::BitMask<PinCode>;
+		*Internal::OutputRegister<Pin> ^= Internal::BitMask<Pin>;
 	}
 #endif
 #ifdef ARDUINO_ARCH_SAM
-	namespace Internal
+	template <uint8_t Pin>
+	struct Internal
 	{
-		template <uint8_t Pin>
-		struct PinConstants
-		{
-			static const uint32_t PinMask;
-			static Pio *const Port;
-		};
-		template <uint8_t Pin>
-		const uint32_t PinConstants<Pin>::PinMask = g_APinDescription[Pin].ulPin;
-		template <uint8_t Pin>
-		Pio *const PinConstants<Pin>::Port = g_APinDescription[Pin].pPort;
-	}
+		static const uint32_t PinMask;
+		static Pio *const Port;
+	};
+	template <uint8_t Pin>
+	const uint32_t Internal<Pin>::PinMask = g_APinDescription[Pin].ulPin;
+	template <uint8_t Pin>
+	Pio *const Internal<Pin>::Port = g_APinDescription[Pin].pPort;
 	template <uint8_t Pin>
 	inline bool DigitalRead()
 	{
-		return Internal::PinConstants<Pin>::Port->PIO_PDSR & Internal::PinConstants<Pin>::PinMask;
+		return Internal<Pin>::Port->PIO_PDSR & Internal<Pin>::PinMask;
 	}
 	template <uint8_t Pin, bool HighOrLow>
 	inline void DigitalWrite()
 	{
-		(HighOrLow ? Internal::PinConstants<Pin>::Port->PIO_SODR : Internal::PinConstants<Pin>::Port->PIO_CODR) = Internal::PinConstants<Pin>::PinMask;
+		(HighOrLow ? Internal<Pin>::Port->PIO_SODR : Internal<Pin>::Port->PIO_CODR) = Internal<Pin>::PinMask;
 	}
 	template <uint8_t Pin>
 	inline void DigitalToggle()
 	{
-		(Internal::PinConstants<Pin>::Port->PIO_OSR ? Internal::PinConstants<Pin>::Port->PIO_SODR : Internal::PinConstants<Pin>::Port->PIO_CODR) = Internal::PinConstants<Pin>::PinMask;
+		(Internal<Pin>::Port->PIO_OSR ? Internal<Pin>::Port->PIO_SODR : Internal<Pin>::Port->PIO_CODR) = Internal<Pin>::PinMask;
 	}
 #endif
 }
