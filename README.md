@@ -6,6 +6,8 @@
 
 本库支持AVR和SAM架构。对于AVR架构，编译器必须支持C++17以上标准。
 
+本库为追求极致性能，跳过了一些内置函数会做的状态检查和设置。必须使用`pinMode`先将引脚设置为正确的状态，否则将产生意外结果。`DigitalRead`只能对`INPUT`状态的引脚使用，`DigitalWrite`和`DigitalToggle`只能对`OUTPUT`状态的引脚使用。使用本库对引脚进行一系列操作之后，如果要进行其它操作，也必须再使用一次`pinMode`将引脚复位到正常状态。
+
 More efficient digital IO than builtin functions.
 
 Builtin functions (digitalRead & digitalWrite) translate pin code into memory address for each call, and will check PWM settings on the Pin. This is more robust but less efficient. My library calculate corresponding memory address only at the first call, store that address for following calls, and don't bother on PWM stuff. Each call is thus simplified into a single bit operation.
@@ -14,10 +16,12 @@ All functions have almost the same name as their builtin counterparts. However, 
 
 This library supports AVR and SAM architectures. For AVR, the compiler must support C++17 or higher standards.
 
+In pursuit of extreme performance, the library skips some state checks and settings that built-in functions do. You must use `pinMode` to set the pin to the correct state first, otherwise unexpected results will be produced. `DigitalRead` can only be used with pins in the `INPUT` state, and `DigitalWrite` and `DigitalToggle` can only be used with pins in the `OUTPUT` state. After a series of operations on the pin using this library, if you want to do other operations, you must also use `pinMode` again to reset the pin to the normal state.
+
 # API参考
 ```C++
-#include <LowLevelQuickDigitalIO>
-using namespace LowLevelQuickDigitalIO;
+#include <Low_level_quick_digital_IO.hpp>
+using namespace Low_level_quick_digital_IO;
 /*
 内置digitalRead函数的高性能替代
 Efficient substitute of builtin digitalRead
