@@ -4,7 +4,7 @@ namespace Low_level_quick_digital_IO
 {
 #ifdef ARDUINO_ARCH_AVR
 #if __cplusplus < 201703L
-#error("对于AVR架构，编译器必须支持C++17以上")
+#error 对于AVR架构，编译器必须支持C++17以上
 #endif
 	// 用于初始化引脚参数的内部功能，一般不应直接调用
 	namespace Internal
