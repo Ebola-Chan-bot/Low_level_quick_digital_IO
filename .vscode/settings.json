@@ -2,6 +2,12 @@
 	"files.associations": {
 		"WIRING.C": "cpp",
 		"WIRING_ANALOG.C": "cpp",
-		"MEM.C": "cpp"
+		"MEM.C": "cpp",
+		"chip.h": "c",
+		"sam.h": "c",
+		"sam3.h": "c",
+		"sam3xa.h": "c",
+		"sam3x8e.h": "c",
+		"variant.h": "c"
 	}
 }

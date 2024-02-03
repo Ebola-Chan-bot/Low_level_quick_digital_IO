@@ -4,7 +4,7 @@
 
 库中所有函数都和对应的内置函数大致同名。但是首字母大写，且所有参数为模板参数。由于每个函数实际上仅仅只有一条位运算赋值语句（条件判断分支在编译期就优化掉了），完全可以对每次调用直接内联，牺牲少许存储空间换取更高性能。
 
-pinMode函数无法优化，因为其寄存器地址会在运行时发生变化，不是常量，必须每次临时计算。请仍使用内置pinMode。
+本库支持AVR和SAM架构。对于AVR架构，编译器必须支持C++17以上标准。
 
 More efficient digital IO than builtin functions.
 
@@ -12,7 +12,7 @@ Builtin functions (digitalRead & digitalWrite) translate pin code into memory ad
 
 All functions have almost the same name as their builtin counterparts. However, the first letter is is capped, and all arguments are template arguments.
 
-The pinMode function cannot be optimized because its register address will change during runtime; i.e., it is not a constant and must be calculated every time. Please still use the built-in pinMode.
+This library supports AVR and SAM architectures. For AVR, the compiler must support C++17 or higher standards.
 
 # API参考
 ```C++

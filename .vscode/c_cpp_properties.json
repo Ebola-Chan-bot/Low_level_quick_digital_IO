@@ -25,14 +25,17 @@
                 "${workspaceFolder}/src",
                 "${LOCALAPPDATA}/Arduino15/packages/arduino/hardware/sam/1.6.12/cores/arduino",
                 "${LOCALAPPDATA}/Arduino15/packages/arduino/hardware/sam/1.6.12/system/libsam",
+                "${LOCALAPPDATA}/Arduino15/packages/arduino/hardware/sam/1.6.12/system/CMSIS/CMSIS/Include",
                 "${LOCALAPPDATA}/Arduino15/packages/arduino/hardware/sam/1.6.12/system/CMSIS/Device/ATMEL",
+                "${LOCALAPPDATA}/Arduino15/packages/arduino/hardware/sam/1.6.12/system/CMSIS/Device/ATMEL/sam",
                 "${LOCALAPPDATA}/Arduino15/packages/arduino/hardware/sam/1.6.12/variants/arduino_due_x",
                 "${LOCALAPPDATA}/Arduino15/packages/arduino/tools/arm-none-eabi-gcc/4.8.3-2014q1/arm-none-eabi/include"
             ],
             "defines": [
                 "F_CPU=84000000L",
                 "ARDUINO_SAM_DUE",
-                "ARDUINO_ARCH_SAM"
+                "ARDUINO_ARCH_SAM",
+                "__SAM3X8E__=1"
             ],
             "compilerPath": "${LOCALAPPDATA}/Arduino15/packages/arduino/tools/arm-none-eabi-gcc/4.8.3-2014q1/bin/arm-none-eabi-g++.exe",
             "cStandard": "c11",
