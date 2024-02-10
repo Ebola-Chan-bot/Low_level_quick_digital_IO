@@ -8,6 +8,7 @@
 		"sam3.h": "c",
 		"sam3xa.h": "c",
 		"sam3x8e.h": "c",
-		"variant.h": "c"
+		"variant.h": "c",
+		"pins_arduino.h": "c"
 	}
 }

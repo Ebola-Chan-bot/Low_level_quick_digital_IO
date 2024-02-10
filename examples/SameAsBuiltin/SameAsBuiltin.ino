@@ -6,8 +6,9 @@ constexpr uint8_t BuiltinPin = 2;
 constexpr uint8_t EfficientPin = 3;
 using namespace Low_level_quick_digital_IO;
 void setup() {
+  PinMode<BuiltinPin>();
   //使用前必须先设置pinMode
-  pinMode(BuiltinPin, OUTPUT);
+  PinMode<BuiltinPin, OUTPUT>();
   pinMode(EfficientPin, OUTPUT);
   //在setup阶段，BuiltinPin和EfficientPin的行为完全相同
   digitalWrite(BuiltinPin, HIGH);
