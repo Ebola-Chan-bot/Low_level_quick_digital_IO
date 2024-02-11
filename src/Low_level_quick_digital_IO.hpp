@@ -22,6 +22,18 @@ namespace Low_level_quick_digital_IO
 #define PROGMEM constexpr
 #include <pins_arduino.h>
 #define PROGMEM __ATTR_PROGMEM__
+#undef ARDUINO_MAIN
+#undef PA 1
+#undef PB 2
+#undef PC 3
+#undef PD 4
+#undef PE 5
+#undef PF 6
+#undef PG 7
+#undef PH 8
+#undef PJ 10
+#undef PK 11
+#undef PL 12
 #define LLQDIO_Dynamic_PTM *(volatile uint8_t *)portModeRegister(digitalPinToPort(Pin))
 #define LLQDIO_Static_PTM *(volatile uint8_t *)Internal::port_to_mode_PGM[Internal::digital_pin_to_port_PGM[Pin]]
 #define LLQDIO_Dynamic_PTB digitalPinToBitMask(Pin)
