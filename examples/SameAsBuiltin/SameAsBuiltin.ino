@@ -6,6 +6,7 @@ constexpr uint8_t BuiltinPin = 2;
 constexpr uint8_t EfficientPin = 3;
 using namespace Low_level_quick_digital_IO;
 void setup() {
+  Serial.begin(9600);
   //可以获知引脚当前是OUTPUT还是INPUT。内置函数无此功能。
   bool IsOutput = PinMode<EfficientPin>();
 
@@ -15,8 +16,8 @@ void setup() {
   bool IsHigh = DigitalRead<EfficientPin>();
 
   //使用前必须先设置pinMode
-  PinMode<BuiltinPin, OUTPUT>();
-  pinMode(EfficientPin, OUTPUT);
+  pinMode(BuiltinPin, OUTPUT);
+  PinMode<EfficientPin, OUTPUT>();
   //在setup阶段，BuiltinPin和EfficientPin的行为完全相同
   digitalWrite(BuiltinPin, HIGH);
   DigitalWrite<EfficientPin, HIGH>();
@@ -28,6 +29,12 @@ void loop() {
   //在loop阶段，EfficientPin持续闪烁
   delay(1000);
   //直接反转引脚电平，无需获知当前是高是低。内置函数无此功能。
+  digitalWrite(BuiltinPin, HIGH);
+  DigitalToggle<EfficientPin>();
+  //在loop阶段，EfficientPin持续闪烁
+  delay(1000);
+  //直接反转引脚电平，无需获知当前是高是低。内置函数无此功能。
+  digitalWrite(BuiltinPin, LOW);
   DigitalToggle<EfficientPin>();
 }
 //本库所有参数也支持非模板的运行时参数。性能会稍低，但仍可保证高于内置。
