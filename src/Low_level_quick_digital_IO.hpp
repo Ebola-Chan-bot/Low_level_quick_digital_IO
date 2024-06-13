@@ -94,9 +94,10 @@ namespace Low_level_quick_digital_IO
 	{                                                                                                                                                                     \
 		(HighOrLow ? LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_SODR : LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_CODR) = LLQDIO_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define LLQDIO_DigitalToggle(DS)                                                                                                                                                                                  \
-	{                                                                                                                                                                                                             \
-		(LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_ODSR ? LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_CODR : LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_SODR) = LLQDIO_##DS g_APinDescription[Pin].ulPin; \
+#define LLQDIO_DigitalToggle(DS)                                                              \
+	{                                                                                         \
+		const PinDescription &PD = LLQDIO_##DS g_APinDescription[Pin];                        \
+		(PD.pPort->PIO_ODSR & PD.ulPin ? PD.pPort->PIO_CODR : PD.pPort->PIO_SODR) = PD.ulPin; \
 	}
 #endif
 	}
