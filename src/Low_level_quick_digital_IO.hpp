@@ -44,29 +44,29 @@ namespace Low_level_quick_digital_IO
 #define _LLQDIO_Dynamic_PTO *(volatile uint8_t *)portOutputRegister(digitalPinToPort(Pin))
 #define _LLQDIO_Static_PTO *(volatile uint8_t *)Internal::port_to_output_PGM[Internal::digital_pin_to_port_PGM[Pin]]
 #define _LLQDIO_PinMode_Get(DS)    \
-	{                             \
+	{                              \
 		return _LLQDIO_##DS##_PTM; \
 	}
-#define _LLQDIO_PinMode_Set(DS)                       \
-	{                                                \
-		if (OutOrIn)                                 \
+#define _LLQDIO_PinMode_Set(DS)                        \
+	{                                                  \
+		if (OutOrIn)                                   \
 			_LLQDIO_##DS##_PTM |= _LLQDIO_##DS##_PTB;  \
-		else                                         \
+		else                                           \
 			_LLQDIO_##DS##_PTM &= ~_LLQDIO_##DS##_PTB; \
 	}
-#define _LLQDIO_DigitalRead(DS)                                  \
-	{                                                           \
+#define _LLQDIO_DigitalRead(DS)                                   \
+	{                                                             \
 		return OutOrIn ? _LLQDIO_##DS##_PTO : _LLQDIO_##DS##_PTI; \
 	}
-#define _LLQDIO_DigitalWrite(DS)                      \
-	{                                                \
-		if (HighOrLow)                               \
+#define _LLQDIO_DigitalWrite(DS)                       \
+	{                                                  \
+		if (HighOrLow)                                 \
 			_LLQDIO_##DS##_PTO |= _LLQDIO_##DS##_PTB;  \
-		else                                         \
+		else                                           \
 			_LLQDIO_##DS##_PTO &= ~_LLQDIO_##DS##_PTB; \
 	}
-#define _LLQDIO_DigitalToggle(DS)                \
-	{                                           \
+#define _LLQDIO_DigitalToggle(DS)                 \
+	{                                             \
 		_LLQDIO_##DS##_PTO ^= _LLQDIO_##DS##_PTB; \
 	}
 #endif
@@ -79,25 +79,25 @@ namespace Low_level_quick_digital_IO
 #pragma pop_macro("__cplusplus")
 #define _LLQDIO_Dynamic
 #define _LLQDIO_Static Internal::
-#define _LLQDIO_PinMode_Get(DS)                                                                               \
-	{                                                                                                        \
+#define _LLQDIO_PinMode_Get(DS)                                                                                \
+	{                                                                                                          \
 		return _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_OSR & _LLQDIO_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define _LLQDIO_PinMode_Set(DS)                                                                                                                                        \
-	{                                                                                                                                                                 \
+#define _LLQDIO_PinMode_Set(DS)                                                                                                                                          \
+	{                                                                                                                                                                    \
 		(OutOrIn ? _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_OER : _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_ODR) = _LLQDIO_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define _LLQDIO_DigitalRead(DS)                                                                                                                                                 \
-	{                                                                                                                                                                          \
+#define _LLQDIO_DigitalRead(DS)                                                                                                                                                   \
+	{                                                                                                                                                                             \
 		return (OutOrIn ? _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_ODSR : _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_PDSR) & _LLQDIO_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define _LLQDIO_DigitalWrite(DS)                                                                                                                                           \
-	{                                                                                                                                                                     \
+#define _LLQDIO_DigitalWrite(DS)                                                                                                                                             \
+	{                                                                                                                                                                        \
 		(HighOrLow ? _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_SODR : _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_CODR) = _LLQDIO_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define _LLQDIO_DigitalToggle(DS)                                                              \
+#define _LLQDIO_DigitalToggle(DS)                                                             \
 	{                                                                                         \
-		const PinDescription &PD = _LLQDIO_##DS g_APinDescription[Pin];                        \
+		const PinDescription &PD = _LLQDIO_##DS g_APinDescription[Pin];                       \
 		(PD.pPort->PIO_ODSR & PD.ulPin ? PD.pPort->PIO_CODR : PD.pPort->PIO_SODR) = PD.ulPin; \
 	}
 #endif
@@ -156,9 +156,44 @@ namespace Low_level_quick_digital_IO
 	// 反转数字引脚的输出状态：若为HIGH则变LOW，若为LOW则变HIGH
 	template <uint8_t Pin>
 	inline void DigitalToggle() _LLQDIO_DigitalToggle(Static);
-	//检查指定引脚是否启用了中断
-	inline bool InterruptEnabled(uint8_t Pin)
+
+	enum class InterruptStatus
 	{
-		detachInterrupt(Pin);
+		// 指示该引脚已启用中断
+		Enabled,
+		// 指示该引脚未启用中断
+		Disabled,
+		// 指示该引脚不支持中断
+		NotSupported
+	};
+	volatile auto &_InterruptRegister =
+#ifdef EIMSK
+		EIMSK
+#elif defined(GICR)
+		GICR
+#elif defined(GIMSK)
+		GIMSK
+#else
+#error detachInterrupt not finished for this cpu
+#endif
+		;
+	constexpr uint8_t _InterruptMask[] = {
+#if defined(__AVR_ATmega32U4__)
+		1 << INT0, 1 << INT1, 1 << INT2, 1 << INT3, 1 << INT6
+#elif defined(__AVR_AT90USB82__) || defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__) || defined(__AVR_ATmega16U2__) || defined(__AVR_ATmega8U2__)
+		1 << INT0, 1 << INT1, 1 << INT2, 1 << INT3, 1 << INT4, 1 << INT5, 1 << INT6, 1 << INT7
+#elif defined(EICRA) && defined(EICRB) && defined(EIMSK)
+		1 << INT4, 1 << INT5, 1 << INT0, 1 << INT1, 1 << INT2, 1 << INT3, 1 << INT6, 1 << INT7
+#else
+		1 << INT0, 1 << INT1, 1 << INT2
+#endif
+	};
+	// 检查指定引脚是否启用了中断
+	inline InterruptStatus InterruptEnabled(uint8_t Pin)
+	{
+		const auto Interrupt = digitalPinToInterrupt(Pin);
+		if (Interrupt == NOT_AN_INTERRUPT || Interrupt >= std::extent_v<decltype(_InterruptMask)>)
+			return InterruptStatus::NotSupported;
+		return _InterruptRegister & _InterruptMask[Interrupt] ? InterruptStatus::Enabled : InterruptStatus::Disabled;
 	}
 }
