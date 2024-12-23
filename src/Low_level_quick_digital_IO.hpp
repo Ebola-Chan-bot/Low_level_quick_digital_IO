@@ -156,17 +156,8 @@ namespace Low_level_quick_digital_IO
 	// 反转数字引脚的输出状态：若为HIGH则变LOW，若为LOW则变HIGH
 	template <uint8_t Pin>
 	inline void DigitalToggle() _LLQDIO_DigitalToggle(Static);
-
-	enum class InterruptStatus
-	{
-		// 指示该引脚已启用中断
-		Enabled,
-		// 指示该引脚未启用中断
-		Disabled,
-		// 指示该引脚不支持中断
-		NotSupported
-	};
-	volatile auto &_InterruptRegister =
+#ifdef ARDUINO_ARCH_AVR
+	constexpr volatile auto& _InterruptRegister =
 #ifdef EIMSK
 		EIMSK
 #elif defined(GICR)
@@ -177,7 +168,7 @@ namespace Low_level_quick_digital_IO
 #error detachInterrupt not finished for this cpu
 #endif
 		;
-	constexpr uint8_t _InterruptMask[] = {
+	constexpr uint8_t _InterruptMask[] PROGMEM = {
 #if defined(__AVR_ATmega32U4__)
 		1 << INT0, 1 << INT1, 1 << INT2, 1 << INT3, 1 << INT6
 #elif defined(__AVR_AT90USB82__) || defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__) || defined(__AVR_ATmega16U2__) || defined(__AVR_ATmega8U2__)
@@ -188,12 +179,61 @@ namespace Low_level_quick_digital_IO
 		1 << INT0, 1 << INT1, 1 << INT2
 #endif
 	};
-	// 检查指定引脚是否启用了中断
-	inline InterruptStatus InterruptEnabled(uint8_t Pin)
+#endif
+	// 检查指定引脚是否支持中断
+	constexpr bool SupportInterrupt(uint8_t Pin)
 	{
-		const auto Interrupt = digitalPinToInterrupt(Pin);
-		if (Interrupt == NOT_AN_INTERRUPT || Interrupt >= std::extent_v<decltype(_InterruptMask)>)
-			return InterruptStatus::NotSupported;
-		return _InterruptRegister & _InterruptMask[Interrupt] ? InterruptStatus::Enabled : InterruptStatus::Disabled;
+		return digitalPinToInterrupt(Pin) != NOT_AN_INTERRUPT;
+	}
+	// 检查指定引脚是否启用了中断
+	inline bool InterruptEnabled(uint8_t Pin)
+	{
+		return
+#ifdef ARDUINO_ARCH_AVR
+			_InterruptRegister & pgm_read_byte_near(_InterruptMask + digitalPinToInterrupt(Pin))
+#endif
+#ifdef ARDUINO_ARCH_SAM
+			g_APinDescription[Pin].ulPin & g_APinDescription[Pin].pPort->PIO_IMR
+#endif
+			;
+	}
+	// 检查指定引脚是否启用了中断
+	template <uint8_t Pin>
+	inline bool InterruptEnabled()
+	{
+		return
+#ifdef ARDUINO_ARCH_AVR
+			_InterruptRegister & pgm_read_byte_near(_InterruptMask + digitalPinToInterrupt(Pin))
+#endif
+#ifdef ARDUINO_ARCH_SAM
+			Internal::g_APinDescription[Pin].ulPin & Internal::g_APinDescription[Pin].pPort->PIO_IMR
+#endif
+			;
+	}
+	template <uint8_t Pin>
+#ifdef __cpp_variable_templates
+	std::move_only_function<void() const> _PinIsr;
+#else
+	struct _PinIsr
+	{
+		static std::move_only_function<void() const> value;
+	};
+#endif
+	template <uint8_t Pin>
+	void _CommonIsr()
+	{
+		_CSL_Struct14Value(_PinIsr, Pin)();
+	}
+	// 将任意可调用对象作为指定引脚的中断处理方法
+	template <uint8_t Pin>
+	inline void AttachInterrupt(std::move_only_function<void() const>&& ISR, int Mode)
+	{
+		_PinIsr<Pin> = std::move(ISR);
+		attachInterrupt(digitalPinToInterrupt(Pin), _CommonIsr<Pin>, Mode);
+	}
+	//停止处理指定引脚的中断
+	inline void DetachInterrupt(uint8_t Pin)
+	{
+		detachInterrupt(digitalPinToInterrupt(Pin));
 	}
 }
