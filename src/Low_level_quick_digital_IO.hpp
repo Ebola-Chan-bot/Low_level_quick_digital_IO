@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <functional>
+#include <unordered_map>
 namespace Low_level_quick_digital_IO
 {
 	// 用于初始化引脚参数的内部功能，一般不应直接调用
@@ -168,17 +169,22 @@ namespace Low_level_quick_digital_IO
 #error detachInterrupt not finished for this cpu
 #endif
 		;
-	constexpr uint8_t _InterruptMask[] PROGMEM = {
-#if defined(__AVR_ATmega32U4__)
-		1 << INT0, 1 << INT1, 1 << INT2, 1 << INT3, 1 << INT6
-#elif defined(__AVR_AT90USB82__) || defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__) || defined(__AVR_ATmega16U2__) || defined(__AVR_ATmega8U2__)
-		1 << INT0, 1 << INT1, 1 << INT2, 1 << INT3, 1 << INT4, 1 << INT5, 1 << INT6, 1 << INT7
-#elif defined(EICRA) && defined(EICRB) && defined(EIMSK)
-		1 << INT4, 1 << INT5, 1 << INT0, 1 << INT1, 1 << INT2, 1 << INT3, 1 << INT6, 1 << INT7
-#else
-		1 << INT0, 1 << INT1, 1 << INT2
-#endif
+	template<uint8_t...Offset>
+	struct _InterruptMask
+	{
+		static constexpr uint8_t value[] = { 1 << Offset... };
 	};
+	using _InterruptMask_t = _InterruptMask<
+#if defined(__AVR_ATmega32U4__)
+		INT0, INT1, INT2, INT3, INT6
+#elif defined(__AVR_AT90USB82__) || defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U2__) || defined(__AVR_ATmega16U2__) || defined(__AVR_ATmega8U2__)
+		INT0, INT1, INT2, INT3, INT4, INT5, INT6, INT7
+#elif defined(EICRA) && defined(EICRB) && defined(EIMSK)
+		INT4, INT5, INT0, INT1, INT2, INT3, INT6, INT7
+#else
+		INT0, INT1, INT2
+#endif
+	>;
 #endif
 	// 检查指定引脚是否支持中断
 	constexpr bool SupportInterrupt(uint8_t Pin)
@@ -190,7 +196,7 @@ namespace Low_level_quick_digital_IO
 	{
 		return
 #ifdef ARDUINO_ARCH_AVR
-			_InterruptRegister & pgm_read_byte_near(_InterruptMask + digitalPinToInterrupt(Pin))
+			_InterruptRegister & _InterruptMask_t::value[digitalPinToInterrupt(Pin)]
 #endif
 #ifdef ARDUINO_ARCH_SAM
 			g_APinDescription[Pin].ulPin & g_APinDescription[Pin].pPort->PIO_IMR
@@ -203,7 +209,7 @@ namespace Low_level_quick_digital_IO
 	{
 		return
 #ifdef ARDUINO_ARCH_AVR
-			_InterruptRegister & pgm_read_byte_near(_InterruptMask + digitalPinToInterrupt(Pin))
+			_InterruptRegister & _InterruptMask_t::value[digitalPinToInterrupt(Pin)]
 #endif
 #ifdef ARDUINO_ARCH_SAM
 			Internal::g_APinDescription[Pin].ulPin & Internal::g_APinDescription[Pin].pPort->PIO_IMR
@@ -224,6 +230,49 @@ namespace Low_level_quick_digital_IO
 	{
 		_CSL_Struct14Value(_PinIsr, Pin)();
 	}
+	struct _PinCommonIsr
+	{
+		std::move_only_function<void()const>& PinIsr;
+		void(*CommonIsr)();
+	};
+#ifdef ARDUINO_ARCH_AVR
+	template<uint8_t New, typename T>
+	struct _Prepend;
+	template<uint8_t New, uint8_t...Old>
+	struct _Prepend<New, std::integer_sequence<uint8_t, Old...>>
+	{
+		using type = std::integer_sequence<uint8_t, New, Old...>;
+	};
+	template<typename T>
+	struct _Interruptable
+	{
+		using type = std::integer_sequence<uint8_t>;
+	};
+	template<uint8_t First, uint8_t...Left>
+	struct _Interruptable<std::integer_sequence<uint8_t, First, Left...>>
+	{
+		using type = std::conditional_t<SupportInterrupt(First), typename _Prepend<First, typename _Interruptable<std::integer_sequence<uint8_t, Left...>>::type>::type, typename _Interruptable<std::integer_sequence<uint8_t, Left...>>::type>;
+	};
+	template<typename T>
+	struct _PinIsrMap;
+	template<uint8_t...Pin>
+	struct _PinIsrMap<std::integer_sequence<uint8_t, Pin...>>
+	{
+		static const std::unordered_map<uint8_t, _PinCommonIsr> value;
+	};
+	template<uint8_t...Pin>
+	const std::unordered_map<uint8_t, _PinCommonIsr> _PinIsrMap<std::integer_sequence<uint8_t, Pin...>>::value{ {Pin,{_CSL_Struct14Value(_PinIsr, Pin), _CommonIsr<Pin>}}... };
+#endif
+#ifdef ARDUINO_ARCH_SAM
+
+#endif
+	// 将任意可调用对象作为指定引脚的中断处理方法。输入不支持中断的引脚是未定义行为。
+	inline void AttachInterrupt(uint8_t Pin, std::move_only_function<void() const>&& ISR, int Mode)
+	{
+		const _PinCommonIsr& PCI = _PinIsrMap<typename _Interruptable<std::make_integer_sequence<uint8_t, UINT8_MAX>>::type>::value.at(Pin);
+		PCI.PinIsr = std::move(ISR);
+		attachInterrupt(digitalPinToInterrupt(Pin), PCI.CommonIsr, Mode);
+	}
 	// 将任意可调用对象作为指定引脚的中断处理方法
 	template <uint8_t Pin>
 	inline void AttachInterrupt(std::move_only_function<void() const>&& ISR, int Mode)
@@ -231,9 +280,40 @@ namespace Low_level_quick_digital_IO
 		_PinIsr<Pin> = std::move(ISR);
 		attachInterrupt(digitalPinToInterrupt(Pin), _CommonIsr<Pin>, Mode);
 	}
+	// 将任意可调用对象作为指定引脚的中断处理方法
+	template <int Mode>
+	inline void AttachInterrupt(uint8_t Pin, std::move_only_function<void() const>&& ISR)
+	{
+		const _PinCommonIsr& PCI = _PinIsrMap<typename _Interruptable<std::make_integer_sequence<uint8_t, UINT8_MAX>>::type>::value.at(Pin);
+		PCI.PinIsr = std::move(ISR);
+		attachInterrupt(digitalPinToInterrupt(Pin), PCI.CommonIsr, Mode);
+	}
+	// 将任意可调用对象作为指定引脚的中断处理方法
+	template <uint8_t Pin, int Mode>
+	inline void AttachInterrupt(std::move_only_function<void() const>&& ISR)
+	{
+		_PinIsr<Pin> = std::move(ISR);
+		attachInterrupt(digitalPinToInterrupt(Pin), _CommonIsr<Pin>, Mode);
+	}
 	//停止处理指定引脚的中断
 	inline void DetachInterrupt(uint8_t Pin)
 	{
-		detachInterrupt(digitalPinToInterrupt(Pin));
+#ifdef ARDUINO_ARCH_AVR
+		_InterruptRegister &= ~_InterruptMask_t::value[digitalPinToInterrupt(Pin)];
+#endif
+#ifdef ARDUINO_ARCH_SAM
+		g_APinDescription[Pin].pPort->PIO_IDR = g_APinDescription[Pin].ulPin;
+#endif
+	}
+	//停止处理指定引脚的中断
+	template<uint8_t Pin>
+	inline void DetachInterrupt()
+	{
+#ifdef ARDUINO_ARCH_AVR
+		_InterruptRegister &= ~_InterruptMask_t::value[digitalPinToInterrupt(Pin)];
+#endif
+#ifdef ARDUINO_ARCH_SAM
+		Internal::g_APinDescription[Pin].pPort->PIO_IDR = Internal::g_APinDescription[Pin].ulPin;
+#endif
 	}
 }
