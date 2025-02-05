@@ -83,7 +83,7 @@ namespace Low_level_quick_digital_IO
 	template <uint8_t... Offset>
 	struct _InterruptMask
 	{
-		static constexpr std::remove_cvref_t<decltype(_InterruptRegister)> value[] = {1 << Offset...};
+		static constexpr std::remove_cvref_t<decltype(_InterruptRegister)> INT[] = {1 << Offset...};
 	};
 	using _InterruptMask_t = _InterruptMask<
 #if defined(__AVR_ATmega32U4__)
@@ -99,13 +99,13 @@ namespace Low_level_quick_digital_IO
 	// 检查指定引脚是否启用了中断
 	inline bool InterruptEnabled(uint8_t Pin)
 	{
-		return _InterruptRegister & _InterruptMask_t::value[digitalPinToInterrupt(Pin)];
+		return _InterruptRegister & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
 	// 检查指定引脚是否启用了中断
 	template <uint8_t Pin>
 	inline bool InterruptEnabled()
 	{
-		return _InterruptRegister & _InterruptMask_t::value[digitalPinToInterrupt(Pin)];
+		return _InterruptRegister & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
 	template <uint8_t... Pin>
 	struct _PinIsrMap<std::integer_sequence<uint8_t, Pin...>>
@@ -115,16 +115,38 @@ namespace Low_level_quick_digital_IO
 	// 停止处理指定引脚的中断
 	inline void DetachInterrupt(uint8_t Pin)
 	{
-		_InterruptRegister &= ~_InterruptMask_t::value[digitalPinToInterrupt(Pin)];
+		_InterruptRegister &= ~_InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
 	// 停止处理指定引脚的中断
 	template <uint8_t Pin>
 	inline void DetachInterrupt()
 	{
-		_InterruptRegister &= ~_InterruptMask_t::value[digitalPinToInterrupt(Pin)];
+		_InterruptRegister &= ~_InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
 	constexpr const _PinCommonIsr &_GetPinCommonIsr(uint8_t Pin)
 	{
 		return _PinIsrMap<std::make_integer_sequence<uint8_t, EXTERNAL_NUM_INTERRUPTS>>::value[digitalPinToInterrupt(Pin)];
+	}
+	// 检查指定引脚是否有中断待处理
+	template<uint8_t Pin>
+	inline bool InterruptPending()
+	{
+		return EIFR & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
+	}
+	// 检查指定引脚是否有中断待处理
+	inline bool InterruptPending(uint8_t Pin)
+	{
+		return EIFR & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
+	}
+	// 清除指定引脚的中断旗帜
+	template <uint8_t Pin>
+	inline void ClearInterrupt()
+	{
+		EIFR = _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
+	}
+	// 清除指定引脚的中断旗帜
+	inline void ClearInterrupt(uint8_t Pin)
+	{
+		EIFR = _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
 }

@@ -67,7 +67,7 @@ namespace Low_level_quick_digital_IO
 	{
 		const _PinCommonIsr &PCI = _GetPinCommonIsr(Pin);
 		PCI.PinIsr = std::move(ISR);
-		//AVR无法优化attachInterrupt，因为牵扯到static变量，外部无法访问
+		//无法优化attachInterrupt，因为牵扯到static变量，外部无法访问
 		attachInterrupt(digitalPinToInterrupt(Pin), PCI.CommonIsr, Mode);
 	}
 	// 将任意可调用对象作为指定引脚的中断处理方法

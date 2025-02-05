@@ -66,4 +66,15 @@ namespace Low_level_quick_digital_IO
 	{
 		return _PinIsrMap<std::make_integer_sequence<uint8_t, NUM_DIGITAL_PINS>>::value[Pin];
 	}
+	// 检查指定引脚是否有中断待处理。由于SAM架构设计使然，此操作存在副作用，将会清除包括指定引脚在内的多个引脚的中断旗帜，请谨慎使用。
+	template<uint8_t Pin>
+	inline bool ClearInterruptPending()
+	{
+		return Internal::g_APinDescription[Pin].pPort->PIO_ISR & Internal::g_APinDescription[Pin].ulPin;
+	}
+	// 检查指定引脚是否有中断待处理。由于SAM架构设计使然，此操作存在副作用，将会清除包括指定引脚在内的多个引脚的中断旗帜，请谨慎使用。
+	inline bool ClearInterruptPending(uint8_t Pin)
+	{
+		return g_APinDescription[Pin].pPort->PIO_ISR & g_APinDescription[Pin].ulPin;
+	}
 }
