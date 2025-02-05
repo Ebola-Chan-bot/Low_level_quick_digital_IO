@@ -1,73 +1,106 @@
-高性能引脚读写
+高性能引脚操作
 
-内置的引脚读写函数digitalRead和digitalWrite需要每次将引脚转换成寄存器地址再进行读写，而且还需要检查PWM计时器设定，虽然增加了可靠性，减少了内存占用，但是性能较低，无法满足超高频读写的需求。本库牺牲一定内存空间和与其它功能的兼容性和稳健性，换取对简单高频引脚读写操作的超高性能。
-
-库中所有函数都和对应的内置函数大致同名（除了额外附赠一个DigitalToggle，可用于高性能产生方波）。但是首字母大写，且所有参数都可以（但不必须）使用编译期确定的模板参数以提高性能。在所有参数均为模板的条件下，编译器可以将函数优化为内联的单条位运算指令，因而具有极高的性能。
-
-本库支持AVR和SAM架构。
-
-本库为追求极致性能，跳过了一些内置函数会做的状态检查和设置，因此仅适用于简单无副作用的引脚高低平读写，可能会与PWM、中断等硬件特定的引脚额外功能冲突。一般应避免将本库的简单操作和其它复杂操作施加到同一个引脚上。如果一定需要切换使用，建议在切换时调用内置pinMode以将引脚重新设为正确的状态。
-
-High performance pin read and write
-
-The built-in pin read function digitalRead and digitalWrite need to convert the pin to the register address each time for reading and writing, and also need to check the PWM timer setting, although increased reliability, reduce memory usage, but the performance is low, can not meet the needs of UHF read and write. The library sacrifices a certain amount of memory space and compatibility and robustness with other functions in exchange for ultra-high performance for simple high-frequency pin read and write operations.
-
-All functions in the library have roughly the same name as their built-in counterparts (except for an extra DigitalToggle), but with uppercase letters, and all parameters can (but are not required to) use compile-time template parameters to improve performance. Under the condition that all parameters are templates, the compiler can optimize the function to an inline single bit-operation instruction, which has extremely high performance. If possible, you should try to use template parameters.
-
-This library supports AVR and SAM architectures.
-
-In pursuit of extreme performance, the library skips the state checks and settings that some built-in functions would do, so it is only suitable for simple, side-effect free pin high and low level reading and writing, which may conflict with hardware specific pin additional features such as PWM and interrupt. You should generally avoid applying simple operations of this library and other complex operations to the same pin. If switching is necessary, it is recommended to call the built-in pinMode when switching to reset the pin to the correct state.
-
+内置的引脚读写函数`digitalRead`和`digitalWrite`需要每次将引脚转换成寄存器地址再进行读写，而且还需要检查PWM计时器设定，虽然增加了可靠性，减少了内存占用，但是性能较低，无法满足超高频操作的需求。本库牺牲一定内存空间和与其它功能的兼容性和稳健性，追求使用尽可能少的指令周期完成引脚操作，并支持内置函数所欠缺的一些扩展功能。
 # API参考
+所有`OutOrIn`参数均可指定为`OUTPUT`或`INPUT`，所有`HighOrLow`参数均可指定为`HIGH`或`LOW`。许多方法都有多个重载，应尽可能使用模板参数来减少运行时开销。
 ```C++
-#include <Low_level_quick_digital_IO.hpp>
-using namespace Low_level_quick_digital_IO;
-// 获知指定引脚配置为输入还是输出。
-inline bool PinMode(uint8_t Pin);
-// 获知指定引脚配置为输入还是输出。
-template <uint8_t Pin>
-inline bool PinMode();
-// 将指定引脚配置为输入或输出。
-inline void PinMode(uint8_t Pin, bool OutOrIn);
-// 将指定引脚配置为输入或输出。
-template <uint8_t Pin>
-inline void PinMode(bool OutOrIn);
-// 将指定引脚配置为输入或输出。
-template <bool OutOrIn>
-inline void PinMode(uint8_t Pin);
-// 将指定引脚配置为输入或输出。
-template <uint8_t Pin, bool OutOrIn>
-inline void PinMode();
-// 从指定的数字引脚读取值（HIGH或LOW）。额外指定读取输入值还是输出值。
-inline bool DigitalRead(uint8_t Pin, bool OutOrIn);
-// 从指定的数字引脚读取值（HIGH或LOW）。额外指定读取输入值还是输出值。
-template <uint8_t Pin>
-inline bool DigitalRead(bool OutOrIn);
-// 从指定的数字引脚读取值（HIGH或LOW）。额外指定读取输入值还是输出值。
-template <bool OutOrIn>
-inline bool DigitalRead(uint8_t Pin);
-// 从指定的数字引脚读取值（HIGH或LOW）。额外指定读取输入值还是输出值。
-template <uint8_t Pin, bool OutOrIn>
-inline bool DigitalRead();
-// 从指定的数字引脚读取值（HIGH或LOW）。根据引脚当前配置为输入还是输出，决定读取输入值还是输出值。
-inline bool DigitalRead(uint8_t Pin);
-// 从指定的数字引脚读取值（HIGH或LOW）。根据引脚当前配置为输入还是输出，决定读取输入值还是输出值。
-template <uint8_t Pin>
-inline bool DigitalRead();
-// 写一个HIGH或LOW值到数字引脚。
-inline void DigitalWrite(uint8_t Pin, bool HighOrLow);
-// 写一个HIGH或LOW值到数字引脚。
-template <uint8_t Pin>
-inline void DigitalWrite(bool HighOrLow);
-// 写一个HIGH或LOW值到数字引脚。
-template <bool HighOrLow>
-inline void DigitalWrite(uint8_t Pin);
-// 写一个HIGH或LOW值到数字引脚。
-template <uint8_t Pin, bool HighOrLow>
-inline void DigitalWrite();
-// 反转数字引脚的输出状态：若为HIGH则变LOW，若为LOW则变HIGH
-inline void DigitalToggle(uint8_t Pin);
-// 反转数字引脚的输出状态：若为HIGH则变LOW，若为LOW则变HIGH
-template <uint8_t Pin>
-inline void DigitalToggle();
+namespace Low_level_quick_digital_IO
+{
+	/*
+	引脚IO操作。主要是增强内置方法的功能和性能，额外提供便捷的引脚翻转功能。
+	*/
+
+	// 获知指定引脚配置为输入还是输出（OUTPUT或INPUT）。
+	inline bool PinMode(uint8_t Pin);
+	template <uint8_t Pin>
+	inline bool PinMode();
+
+	// 将指定引脚配置为输入或输出。
+	inline void PinMode(uint8_t Pin, bool OutOrIn);
+	template <uint8_t Pin>
+	inline void PinMode(bool OutOrIn);
+	template <bool OutOrIn>
+	inline void PinMode(uint8_t Pin);
+	template <uint8_t Pin, bool OutOrIn>
+	inline void PinMode();
+
+	// 从指定的数字引脚读取值（HIGH或LOW）。额外指定读取输入值还是输出值。
+	inline bool DigitalRead(uint8_t Pin, bool OutOrIn);
+	template <uint8_t Pin>
+	inline bool DigitalRead(bool OutOrIn);
+	template <bool OutOrIn>
+	inline bool DigitalRead(uint8_t Pin);
+	template <uint8_t Pin, bool OutOrIn>
+	inline bool DigitalRead();
+
+	// 从指定的数字引脚读取值（HIGH或LOW）。根据引脚当前配置为输入还是输出，决定读取输入值还是输出值。由于存在检查当前引脚配置的开销，建议尽可能选择指定读取输入值还是输出值的重载。
+	inline bool DigitalRead(uint8_t Pin);
+	template <uint8_t Pin>
+	inline bool DigitalRead();
+	
+	// 写一个HIGH或LOW值到数字引脚。
+	inline void DigitalWrite(uint8_t Pin, bool HighOrLow);
+	template <uint8_t Pin>
+	inline void DigitalWrite(bool HighOrLow);
+	template <bool HighOrLow>
+	inline void DigitalWrite(uint8_t Pin);
+	template <uint8_t Pin, bool HighOrLow>
+	inline void DigitalWrite();
+
+	// 反转数字引脚的输出状态：若为HIGH则变LOW，若为LOW则变HIGH
+	inline void DigitalToggle(uint8_t Pin);
+	template <uint8_t Pin>
+	inline void DigitalToggle();
+
+	/*
+	引脚中断操作。注意并非所有引脚都支持中断，使用PinInterruptable可以检查指定引脚是否支持中断。本库提供的中断附加和移除操作可以按需与内置方法混用，不要求附加和移除方法配对使用，不会产生异常。中断不会排队，如果在处理前发生多次中断，也只会处理一次。还可以按需手动取消中断事件。
+	*/
+
+	// 检查指定引脚是否支持中断功能。始终在使用中断前检查引脚支持性。出于性能考虑，本库中其它中断操作均不会检查引脚支持性，尝试对不支持的引脚附加中断是未定义行为。
+	inline constexpr bool PinInterruptable(uint8_t Pin);
+
+	// 检查全局设置中断是否启用。如未启用，所有中断均不生效。使用内置interrupts()和noInterrupts()来启用和禁用全局中断。
+	inline bool GlobalInterruptEnabled();
+
+	// 将任意可调用对象作为指定引脚的中断处理方法。此方法仅用于支持复杂的可调用对象，实际性能低于内置attachInterrupt，无论是在附加时还是在中断处理时都会有额外开销。如果你只需要附加一个简单的函数指针，应使用内置方法。对象会在下次调用AttachInterrupt（非内置）时被析构，在那之前其所拥有的资源将不会被释放。
+	inline void AttachInterrupt(uint8_t Pin, std::move_only_function<void() const> &&ISR, int Mode);
+	template <uint8_t Pin>
+	inline void AttachInterrupt(std::move_only_function<void() const> &&ISR, int Mode);
+	template <int Mode>
+	inline void AttachInterrupt(uint8_t Pin, std::move_only_function<void() const> &&ISR);
+	template <uint8_t Pin, int Mode>
+	inline void AttachInterrupt(std::move_only_function<void() const> &&ISR);
+
+	// 检查指定引脚是否已附加中断
+	template <uint8_t Pin>
+	inline bool InterruptEnabled();
+	inline bool InterruptEnabled(uint8_t Pin);
+
+	// 停止处理指定引脚的中断。如果引脚未附加中断，不会产生异常。此方法不会析构AttachInterrupt传入的可调用对象。
+	template <uint8_t Pin>
+	inline void DetachInterrupt();
+	inline void DetachInterrupt(uint8_t Pin);
+
+#ifdef ARDUINO_ARCH_AVR
+	// AVR架构专有方法
+
+	// 检查指定引脚是否有中断事件待处理
+	template<uint8_t Pin>
+	inline bool InterruptPending();
+	inline bool InterruptPending(uint8_t Pin);
+
+	// 取消指定引脚的待处理中断事件。如果引脚未竖起中断旗帜，不会产生异常。
+	template <uint8_t Pin>
+	inline void ClearInterrupt();
+	inline void ClearInterrupt(uint8_t Pin);
+#endif
+#ifdef ARDUINO_ARCH_SAM
+	// SAM架构专有方法
+
+	// 检查指定引脚是否有中断事件待处理。由于SAM架构设计使然，此操作存在副作用，将会清除包括指定引脚在内的多个引脚的中断旗帜，请谨慎使用。
+	template<uint8_t Pin>
+	inline bool ClearInterruptPending();
+	inline bool ClearInterruptPending(uint8_t Pin);
+#endif
+}
 ```
