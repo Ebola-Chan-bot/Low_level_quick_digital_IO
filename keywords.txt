@@ -1,9 +1,15 @@
 # Datatypes (KEYWORD1)
 
 # Functions (KEYWORD2)
-DigitalRead	KEYWORD2
-DigitalWrite	KEYWORD2
-DigitalToggle	KEYWORD2
+PinMode					KEYWORD2
+DigitalRead				KEYWORD2
+DigitalWrite			KEYWORD2
+DigitalToggle			KEYWORD2
+PinInterruptable		KEYWORD2
+AttachInterrupt			KEYWORD2
+InterruptEnabled		KEYWORD2
+DetachInterrupt			KEYWORD2
+GlobalInterruptEnabled	KEYWORD2
 # Structures (KEYWORD3)
 
 # Constants (LITERAL1)

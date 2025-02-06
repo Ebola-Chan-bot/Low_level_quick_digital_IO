@@ -1,7 +1,8 @@
 #pragma once
-#include <Arduino.h>
+#include <Cpp_Standard_Library.h>
 #include <functional>
-namespace Low_level_quick_digital_IO
+#include <Arduino.h>
+namespace Quick_digital_IO_interrupt
 {
 	template <uint8_t Pin>
 #ifdef __cpp_variable_templates

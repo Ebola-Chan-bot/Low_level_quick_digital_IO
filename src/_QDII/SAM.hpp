@@ -1,6 +1,6 @@
 #pragma once
 #include "CommonTypes.hpp"
-namespace Low_level_quick_digital_IO {
+namespace Quick_digital_IO_interrupt {
 	// 用于初始化引脚参数的内部功能，一般不应直接调用
 	namespace Internal {
 #pragma push_macro("__cplusplus")
@@ -9,27 +9,27 @@ namespace Low_level_quick_digital_IO {
 #include <variant.cpp>
 #undef PinDescription
 #pragma pop_macro("__cplusplus")
-#define _LLQDIO_Dynamic
-#define _LLQDIO_Static Internal::
-#define _LLQDIO_PinMode_Get(DS)                                                                                \
+#define _QDII_Dynamic
+#define _QDII_Static Internal::
+#define _QDII_PinMode_Get(DS)                                                                                \
 	{                                                                                                          \
-		return _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_OSR & _LLQDIO_##DS g_APinDescription[Pin].ulPin; \
+		return _QDII_##DS g_APinDescription[Pin].pPort->PIO_OSR & _QDII_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define _LLQDIO_PinMode_Set(DS)                                                                                                                                          \
+#define _QDII_PinMode_Set(DS)                                                                                                                                          \
 	{                                                                                                                                                                    \
-		(OutOrIn ? _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_OER : _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_ODR) = _LLQDIO_##DS g_APinDescription[Pin].ulPin; \
+		(OutOrIn ? _QDII_##DS g_APinDescription[Pin].pPort->PIO_OER : _QDII_##DS g_APinDescription[Pin].pPort->PIO_ODR) = _QDII_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define _LLQDIO_DigitalRead(DS)                                                                                                                                                   \
+#define _QDII_DigitalRead(DS)                                                                                                                                                   \
 	{                                                                                                                                                                             \
-		return (OutOrIn ? _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_ODSR : _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_PDSR) & _LLQDIO_##DS g_APinDescription[Pin].ulPin; \
+		return (OutOrIn ? _QDII_##DS g_APinDescription[Pin].pPort->PIO_ODSR : _QDII_##DS g_APinDescription[Pin].pPort->PIO_PDSR) & _QDII_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define _LLQDIO_DigitalWrite(DS)                                                                                                                                             \
+#define _QDII_DigitalWrite(DS)                                                                                                                                             \
 	{                                                                                                                                                                        \
-		(HighOrLow ? _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_SODR : _LLQDIO_##DS g_APinDescription[Pin].pPort->PIO_CODR) = _LLQDIO_##DS g_APinDescription[Pin].ulPin; \
+		(HighOrLow ? _QDII_##DS g_APinDescription[Pin].pPort->PIO_SODR : _QDII_##DS g_APinDescription[Pin].pPort->PIO_CODR) = _QDII_##DS g_APinDescription[Pin].ulPin; \
 	}
-#define _LLQDIO_DigitalToggle(DS)                                                             \
+#define _QDII_DigitalToggle(DS)                                                             \
 	{                                                                                         \
-		const PinDescription &PD = _LLQDIO_##DS g_APinDescription[Pin];                       \
+		const PinDescription &PD = _QDII_##DS g_APinDescription[Pin];                       \
 		(PD.pPort->PIO_ODSR & PD.ulPin ? PD.pPort->PIO_CODR : PD.pPort->PIO_SODR) = PD.ulPin; \
 	}
 	}

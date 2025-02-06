@@ -1,7 +1,7 @@
 #pragma once
 #include "CommonTypes.hpp"
 #include <wiring_private.h>
-namespace Low_level_quick_digital_IO {
+namespace Quick_digital_IO_interrupt {
 	// 用于初始化引脚参数的内部功能，一般不应直接调用
 	namespace Internal {
 #undef Pins_Arduino_h
@@ -32,42 +32,42 @@ namespace Low_level_quick_digital_IO {
 #undef PJ 10
 #undef PK 11
 #undef PL 12
-#define _LLQDIO_Dynamic_PTM *(volatile uint8_t *)portModeRegister(digitalPinToPort(Pin))
-#define _LLQDIO_Static_PTM *(volatile uint8_t *)Internal::port_to_mode_PGM[Internal::digital_pin_to_port_PGM[Pin]]
-#define _LLQDIO_Dynamic_PTB digitalPinToBitMask(Pin)
-#define _LLQDIO_Static_PTB Internal::digital_pin_to_bit_mask_PGM[Pin]
-#define _LLQDIO_Dynamic_PTI *(volatile uint8_t *)portInputRegister(digitalPinToPort(Pin))
-#define _LLQDIO_Static_PTI *(volatile uint8_t *)Internal::port_to_input_PGM[Internal::digital_pin_to_port_PGM[Pin]]
-#define _LLQDIO_Dynamic_PTO *(volatile uint8_t *)portOutputRegister(digitalPinToPort(Pin))
-#define _LLQDIO_Static_PTO *(volatile uint8_t *)Internal::port_to_output_PGM[Internal::digital_pin_to_port_PGM[Pin]]
-#define _LLQDIO_PinMode_Get(DS)    \
+#define _QDII_Dynamic_PTM *(volatile uint8_t *)portModeRegister(digitalPinToPort(Pin))
+#define _QDII_Static_PTM *(volatile uint8_t *)Internal::port_to_mode_PGM[Internal::digital_pin_to_port_PGM[Pin]]
+#define _QDII_Dynamic_PTB digitalPinToBitMask(Pin)
+#define _QDII_Static_PTB Internal::digital_pin_to_bit_mask_PGM[Pin]
+#define _QDII_Dynamic_PTI *(volatile uint8_t *)portInputRegister(digitalPinToPort(Pin))
+#define _QDII_Static_PTI *(volatile uint8_t *)Internal::port_to_input_PGM[Internal::digital_pin_to_port_PGM[Pin]]
+#define _QDII_Dynamic_PTO *(volatile uint8_t *)portOutputRegister(digitalPinToPort(Pin))
+#define _QDII_Static_PTO *(volatile uint8_t *)Internal::port_to_output_PGM[Internal::digital_pin_to_port_PGM[Pin]]
+#define _QDII_PinMode_Get(DS)    \
 	{                              \
-		return _LLQDIO_##DS##_PTM; \
+		return _QDII_##DS##_PTM; \
 	}
-#define _LLQDIO_PinMode_Set(DS)                        \
+#define _QDII_PinMode_Set(DS)                        \
 	{                                                  \
 		if (OutOrIn)                                   \
-			_LLQDIO_##DS##_PTM |= _LLQDIO_##DS##_PTB;  \
+			_QDII_##DS##_PTM |= _QDII_##DS##_PTB;  \
 		else                                           \
-			_LLQDIO_##DS##_PTM &= ~_LLQDIO_##DS##_PTB; \
+			_QDII_##DS##_PTM &= ~_QDII_##DS##_PTB; \
 	}
-#define _LLQDIO_DigitalRead(DS)                                   \
+#define _QDII_DigitalRead(DS)                                   \
 	{                                                             \
-		return OutOrIn ? _LLQDIO_##DS##_PTO : _LLQDIO_##DS##_PTI; \
+		return OutOrIn ? _QDII_##DS##_PTO : _QDII_##DS##_PTI; \
 	}
-#define _LLQDIO_DigitalWrite(DS)                       \
+#define _QDII_DigitalWrite(DS)                       \
 	{                                                  \
 		if (HighOrLow)                                 \
-			_LLQDIO_##DS##_PTO |= _LLQDIO_##DS##_PTB;  \
+			_QDII_##DS##_PTO |= _QDII_##DS##_PTB;  \
 		else                                           \
-			_LLQDIO_##DS##_PTO &= ~_LLQDIO_##DS##_PTB; \
+			_QDII_##DS##_PTO &= ~_QDII_##DS##_PTB; \
 	}
-#define _LLQDIO_DigitalToggle(DS)                 \
+#define _QDII_DigitalToggle(DS)                 \
 	{                                             \
-		_LLQDIO_##DS##_PTO ^= _LLQDIO_##DS##_PTB; \
+		_QDII_##DS##_PTO ^= _QDII_##DS##_PTB; \
 	}
 	}
-	constexpr volatile auto& _InterruptRegister =
+	constexpr volatile uint8_t& _InterruptRegister =
 #ifdef EIMSK
 		EIMSK
 #elif defined(GICR)
