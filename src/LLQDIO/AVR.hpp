@@ -93,50 +93,55 @@ namespace Low_level_quick_digital_IO {
 		INT0, INT1, INT2
 #endif
 	>;
-	// 检查指定引脚是否已附加中断
-	inline bool InterruptEnabled(uint8_t Pin) {
-		return _InterruptRegister & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
-	}
-	// 检查指定引脚是否已附加中断
-	template <uint8_t Pin>
-	inline bool InterruptEnabled() {
-		return _InterruptRegister & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
-	}
 	template <uint8_t... Pin>
 	struct _PinIsrMap<std::integer_sequence<uint8_t, Pin...>> {
 		static constexpr _PinCommonIsr value[EXTERNAL_NUM_INTERRUPTS] = { {_CSL_Struct14Value(_PinIsr, Pin), _CommonIsr<Pin>}... };
 	};
-	// 停止处理指定引脚的中断。如果引脚未附加中断，不会产生异常。此方法不会析构AttachInterrupt传入的可调用对象。
+	constexpr const _PinCommonIsr& _GetPinCommonIsr(uint8_t Pin) {
+		return _PinIsrMap<std::make_integer_sequence<uint8_t, EXTERNAL_NUM_INTERRUPTS>>::value[digitalPinToInterrupt(Pin)];
+	}
+
+	// 检查指定引脚是否已附加中断，即处于监听或挂起状态。
+	inline bool InterruptEnabled(uint8_t Pin) {
+		return _InterruptRegister & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
+	}
+	// 检查指定引脚是否已附加中断，即处于监听或挂起状态。
+	template <uint8_t Pin>
+	inline bool InterruptEnabled() {
+		return _InterruptRegister & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
+	}
+	
+	// 停止处理指定引脚的中断。如果引脚空闲或空闲但挂起，也不会产生异常。此方法不会析构AttachInterrupt传入的可调用对象。此方法是AttachInterrupt的逆操作。
 	inline void DetachInterrupt(uint8_t Pin) {
 		_InterruptRegister &= ~_InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
-	// 停止处理指定引脚的中断。如果引脚未附加中断，不会产生异常。此方法不会析构AttachInterrupt传入的可调用对象。
+	// 停止处理指定引脚的中断。如果引脚空闲或空闲但挂起，也不会产生异常。此方法不会析构AttachInterrupt传入的可调用对象。此方法是AttachInterrupt的逆操作。
 	template <uint8_t Pin>
 	inline void DetachInterrupt() {
 		_InterruptRegister &= ~_InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
-	constexpr const _PinCommonIsr& _GetPinCommonIsr(uint8_t Pin) {
-		return _PinIsrMap<std::make_integer_sequence<uint8_t, EXTERNAL_NUM_INTERRUPTS>>::value[digitalPinToInterrupt(Pin)];
-	}
-	// 检查指定引脚是否有中断事件待处理
+
+	// 检查指定引脚是否有中断事件挂起。
 	template<uint8_t Pin>
 	inline bool InterruptPending() {
 		return EIFR & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
-	// 检查指定引脚是否有中断事件待处理
+	// 检查指定引脚是否有中断事件挂起。
 	inline bool InterruptPending(uint8_t Pin) {
 		return EIFR & _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
-	// 取消指定引脚的待处理中断事件。如果引脚未竖起中断旗帜，不会产生异常。
+
+	// 取消引脚挂起的中断事件。如果引脚未挂起，也不会产生异常。
 	template <uint8_t Pin>
 	inline void ClearInterrupt() {
 		EIFR = _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
-	// 取消指定引脚的待处理中断事件。如果引脚未竖起中断旗帜，不会产生异常。
+	// 取消引脚挂起的中断事件。如果引脚未挂起，也不会产生异常。
 	inline void ClearInterrupt(uint8_t Pin) {
 		EIFR = _InterruptMask_t::INT[digitalPinToInterrupt(Pin)];
 	}
-	// 检查全局设置中断是否启用。如未启用，所有中断均不生效。使用内置interrupts()和noInterrupts()函数来启用和禁用全局中断。
+	
+	// 检查全局设置中断是否启用。如禁用，所有引脚的中断均不工作。使用内置interrupts()和noInterrupts()来启用和禁用全局中断。
 	inline bool GlobalInterruptEnabled() {
 		return SREG & (1 << SREG_I);
 	}
