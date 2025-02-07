@@ -6,8 +6,7 @@
 #include "_QDII/SAM.hpp"
 #endif
 //所有引脚操作前必须确认引脚是否有效，确认方法是检查引脚号是否小于NUM_DIGITAL_PINS。所有中断操作前必须确认中断是否有效，确认方法是检查digitalPinToInterrupt(Pin)是否不等于NOT_AN_INTERRUPT
-namespace Quick_digital_IO_interrupt
-{
+namespace Quick_digital_IO_interrupt {
 	// // 获知引脚工作于OUTPUT还是INPUT模式。
 	inline bool PinMode(uint8_t Pin) _QDII_PinMode_Get(Dynamic);
 	// // 获知引脚工作于OUTPUT还是INPUT模式。
@@ -39,14 +38,12 @@ namespace Quick_digital_IO_interrupt
 	inline bool DigitalRead() _QDII_DigitalRead(Static);
 
 	// 从引脚读取状态（HIGH或LOW）。根据引脚当前工作模式，决定读取OUTPUT还是INPUT状态。由于存在检查工作模式的开销，建议尽可能选择指定读取OUTPUT还是INPUT状态的重载。
-	inline bool DigitalRead(uint8_t Pin)
-	{
+	inline bool DigitalRead(uint8_t Pin) {
 		return DigitalRead(Pin, PinMode(Pin));
 	}
 	// 从引脚读取状态（HIGH或LOW）。根据引脚当前工作模式，决定读取OUTPUT还是INPUT状态。由于存在检查工作模式的开销，建议尽可能选择指定读取OUTPUT还是INPUT状态的重载。
 	template <uint8_t Pin>
-	inline bool DigitalRead()
-	{
+	inline bool DigitalRead() {
 		return DigitalRead<Pin>(PinMode<Pin>());
 	}
 
@@ -74,33 +71,29 @@ namespace Quick_digital_IO_interrupt
 	}
 
 	// 将任意可调用对象作为引脚的中断处理方法，并设置中断条件。此方法仅用于支持复杂的可调用对象，实际性能低于内置attachInterrupt，无论是在附加时还是在中断处理时都会有额外开销。如果你只需要附加一个简单的函数指针，应使用内置方法。对象会在下次调用AttachInterrupt（非内置）时被析构，在那之前其所拥有的资源将不会被释放。
-	inline void AttachInterrupt(uint8_t Pin, std::move_only_function<void() const> &&ISR, int Mode)
-	{
-		const _PinCommonIsr &PCI = _GetPinCommonIsr(Pin);
+	inline void AttachInterrupt(uint8_t Pin, std::move_only_function<void() const>&& ISR, int Mode) {
+		const _PinCommonIsr& PCI = _GetPinCommonIsr(Pin);
 		PCI.PinIsr = std::move(ISR);
 		//无法优化attachInterrupt，因为牵扯到static变量，外部无法访问
 		attachInterrupt(digitalPinToInterrupt(Pin), PCI.CommonIsr, Mode);
 	}
 	// 将任意可调用对象作为引脚的中断处理方法，并设置中断条件。此方法仅用于支持复杂的可调用对象，实际性能低于内置attachInterrupt，无论是在附加时还是在中断处理时都会有额外开销。如果你只需要附加一个简单的函数指针，应使用内置方法。对象会在下次调用AttachInterrupt（非内置）时被析构，在那之前其所拥有的资源将不会被释放。
 	template <uint8_t Pin>
-	inline void AttachInterrupt(std::move_only_function<void() const> &&ISR, int Mode)
-	{
-		_PinIsr<Pin> = std::move(ISR);
+	inline void AttachInterrupt(std::move_only_function<void() const>&& ISR, int Mode) {
+		_CSL_Struct14Value(_PinIsr, Pin) = std::move(ISR);
 		attachInterrupt(digitalPinToInterrupt(Pin), _CommonIsr<Pin>, Mode);
 	}
 	// 将任意可调用对象作为引脚的中断处理方法，并设置中断条件。此方法仅用于支持复杂的可调用对象，实际性能低于内置attachInterrupt，无论是在附加时还是在中断处理时都会有额外开销。如果你只需要附加一个简单的函数指针，应使用内置方法。对象会在下次调用AttachInterrupt（非内置）时被析构，在那之前其所拥有的资源将不会被释放。
 	template <int Mode>
-	inline void AttachInterrupt(uint8_t Pin, std::move_only_function<void() const> &&ISR)
-	{
-		const _PinCommonIsr &PCI = _GetPinCommonIsr(Pin);
+	inline void AttachInterrupt(uint8_t Pin, std::move_only_function<void() const>&& ISR) {
+		const _PinCommonIsr& PCI = _GetPinCommonIsr(Pin);
 		PCI.PinIsr = std::move(ISR);
 		attachInterrupt(digitalPinToInterrupt(Pin), PCI.CommonIsr, Mode);
 	}
 	// 将任意可调用对象作为引脚的中断处理方法，并设置中断条件。此方法仅用于支持复杂的可调用对象，实际性能低于内置attachInterrupt，无论是在附加时还是在中断处理时都会有额外开销。如果你只需要附加一个简单的函数指针，应使用内置方法。对象会在下次调用AttachInterrupt（非内置）时被析构，在那之前其所拥有的资源将不会被释放。
 	template <uint8_t Pin, int Mode>
-	inline void AttachInterrupt(std::move_only_function<void() const> &&ISR)
-	{
-		_PinIsr<Pin> = std::move(ISR);
+	inline void AttachInterrupt(std::move_only_function<void() const>&& ISR) {
+		_CSL_Struct14Value(_PinIsr, Pin) = std::move(ISR);
 		attachInterrupt(digitalPinToInterrupt(Pin), _CommonIsr<Pin>, Mode);
 	}
 }
